@@ -1,11 +1,11 @@
-import { ID, Client, Users, Messaging } from 'node-appwrite';
+import { Client, Users, Messaging, ID } from 'node-appwrite';
 
 export default async ({ req, res, log, error }) => {
   const client = new Client()
     .setEndpoint(process.env.APPWRITE_FUNCTION_API_ENDPOINT)
     .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
     .setKey(process.env.APPWRITE_API_KEY);
-  
+
   const users = new Users(client);
   const messaging = new Messaging(client);
 
@@ -28,31 +28,39 @@ export default async ({ req, res, log, error }) => {
 
   try {
     const notificationResult = await messaging.createPush(
-      ID.unique(), // Unique message ID
+      ID.unique(), 
       title,
       body,
-      [], // No topics
-      [receiverUserId], // User ID to receive the push
-      [], // No additional targets
-      { message }, // Custom data
-      "open_app", // Action
-      "", // Image URL
-      "icon.png", // Icon
-      "default", // Sound
-      "#FFFFFF", // Color
-      "msg_tag", // Tag
-      null, // Badge
-      false, // Draft
-      "", // ScheduledAt
-      false, // ContentAvailable
-      false, // Critical
-      "high" // Priority
+      [],
+      [receiverUserId],
+      [],
+      {
+        aps: {
+          alert: {
+            title: title,
+            body: message
+          },
+          sound: "default"
+        }
+      },
+      "open_app",
+      "",
+      "icon.png",
+      "default",
+      "#FFFFFF",
+      "msg_tag",
+      null,
+      false,
+      "",
+      false,
+      false,
+      Messaging.MessagePriority.HIGH
     );
 
     log(`Notification result: ${JSON.stringify(notificationResult)}`);
     return res.json({ success: true, message: "Notification sent", result: notificationResult });
   } catch (err) {
-    log(`APNs Error: ${err.message}`);
+    error(`APNs Error: ${err.message}`);
     return res.json({ success: false, message: "Error sending notification: " + err.message }, 500);
   }
 
