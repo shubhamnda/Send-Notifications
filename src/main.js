@@ -25,9 +25,10 @@ export default async ({ req, res, log, error }) => {
   // Extract message details from the request body
   const { currentUserId, receiverUserId, message, title, body } = req.body;
 
-  if (!currentUserId || !receiverUserId || !message || !title || !body) {
-    return res.json({ success: false, message: "Missing required parameters" }, 400);
-  }
+if (!currentUserId || !receiverUserId || !message || !title || !body) {
+  return res.json({ success: false, message: "Missing required parameters" }, 400);
+}
+
 
   try {
     // Send push notification
