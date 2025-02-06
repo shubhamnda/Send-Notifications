@@ -1,3 +1,4 @@
+import { ID } from 'appwrite';
 import { Client, Users, Messaging } from 'node-appwrite';
 
 export default async ({ req, res, log, error }) => {
@@ -30,35 +31,36 @@ if (!currentUserId || !receiverUserId || !message || !title || !body) {
 }
 
 
-  try {
-    // Send push notification
-    const notificationResult = await messaging.createPush(
-      `msg_${Date.now()}`, // Unique message ID
-      title,
-      body,
-      [], // topics
-      [receiverUserId], // Send to specific user
-      [], // targets
-      { message }, // Custom data
-      "open_app", // action
-      "", // image
-      "icon.png", // icon
-      "default", // sound
-      "#FFFFFF", // color
-      "msg_tag", // tag
-      null, // badge
-      false, // draft
-      "", // scheduledAt
-      false, // contentAvailable
-      false, // critical
-      sdk.MessagePriority.High // priority
-    );
-    
-    // Return success response after notification is sent
-    return res.json({ success: true, message: "Notification sent", result: notificationResult });
-  } catch (err) {
-    return res.json({ success: false, message: "Error sending notification: " + err.message }, 500);
-  }
+try {
+  const notificationResult = await messaging.createPush(
+    ID.unique, 
+    title,
+    body,
+    [], // No topics
+    [receiverUserId], // User ID to receive the push
+    [], // No additional targets
+    { message },
+    "open_app", 
+    "", 
+    "icon.png", 
+    "default", 
+    "#FFFFFF", 
+    "msg_tag", 
+    null, 
+    false, 
+    "", 
+    false, 
+    false, 
+    sdk.MessagePriority.High
+  );
+
+  log(`Notification result: ${JSON.stringify(notificationResult)}`);
+  return res.json({ success: true, message: "Notification sent", result: notificationResult });
+} catch (err) {
+  log(`APNs Error: ${err.message}`);
+  return res.json({ success: false, message: "Error sending notification: " + err.message }, 500);
+}
+
 
   return res.json({
     motto: "Build like a team of hundreds_",
