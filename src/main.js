@@ -1,29 +1,62 @@
-import { Client, Users } from 'node-appwrite';
+import { Client, Users, Messaging } from 'node-appwrite';
 
-// This Appwrite function will be executed every time your function is triggered
 export default async ({ req, res, log, error }) => {
-  // You can use the Appwrite SDK to interact with other services
-  // For this example, we're using the Users service
   const client = new Client()
     .setEndpoint(process.env.APPWRITE_FUNCTION_API_ENDPOINT)
-    .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
-    .setKey(req.headers['x-appwrite-key'] ?? '');
+    .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID);
+   
+  
   const users = new Users(client);
+  const messaging = new Messaging(client);
 
   try {
+    // List all users (for debugging or logging purposes)
     const response = await users.list();
-    // Log messages and errors to the Appwrite Console
-    // These logs won't be seen by your end users
     log(`Total users: ${response.total}`);
   } catch(err) {
     error("Could not list users: " + err.message);
   }
 
-  // The req object contains the request data
+  // Handle the /ping route
   if (req.path === "/ping") {
-    // Use res object to respond with text(), json(), or binary()
-    // Don't forget to return a response!
     return res.text("Pong");
+  }
+
+  // Extract message details from the request body
+  const { currentUserId, receiverUserId, message, title, body } = req.body;
+
+  if (!currentUserId || !receiverUserId || !message || !title || !body) {
+    return res.json({ success: false, message: "Missing required parameters" }, 400);
+  }
+
+  try {
+    // Send push notification
+    const notificationResult = await messaging.createPush(
+      `msg_${Date.now()}`, // Unique message ID
+      title,
+      body,
+      [], // topics
+      [receiverUserId], // Send to specific user
+      [], // targets
+      { message }, // Custom data
+      "open_app", // action
+      "", // image
+      "icon.png", // icon
+      "default", // sound
+      "#FFFFFF", // color
+      "msg_tag", // tag
+      null, // badge
+      false, // draft
+      "", // scheduledAt
+      false, // contentAvailable
+      false, // critical
+      sdk.MessagePriority.High // priority
+    );
+    
+    // Return success response after notification is sent
+    return res.json({ success: true, message: "Notification sent", result: notificationResult });
+  } catch (err) {
+    return res.json({ success: false, message: "Error sending notification: " + err.message }, 500);
   }
 
   return res.json({
